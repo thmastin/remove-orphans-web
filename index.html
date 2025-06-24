@@ -44,8 +44,20 @@ function processCSV() {
             const { cleaned, orphans } = removeOrphans(results.data);
             const cleanedRows = cleaned.length;
             const orphansRows = orphans.length;
-            const csvCleaned = Papa.unparse(cleaned);
-            const csvOrphans = Papa.unparse(orphans);
+            // Get full header from results.meta.fields
+            const fullHeader = results.meta && results.meta.fields ? results.meta.fields : Object.keys(results.data[0] || {});
+            // Ensure all objects have all header keys
+            function fillMissingFields(arr) {
+                return arr.map(row => {
+                    const filled = {};
+                    fullHeader.forEach(key => { filled[key] = row[key] !== undefined ? row[key] : ''; });
+                    return filled;
+                });
+            }
+            const cleanedFilled = fillMissingFields(cleaned);
+            const orphansFilled = fillMissingFields(orphans);
+            const csvCleaned = Papa.unparse(cleanedFilled, { columns: fullHeader });
+            const csvOrphans = Papa.unparse(orphansFilled, { columns: fullHeader });
             const blobCleaned = new Blob([csvCleaned], { type: 'text/csv' });
             const blobOrphans = new Blob([csvOrphans], { type: 'text/csv' });
             download.href = URL.createObjectURL(blobCleaned);

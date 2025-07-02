@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Keep Validation Columns</title>
+    <style>body { font-family: Arial, sans-serif; margin: 2em; } .container { max-width: 600px; margin: auto; } .desc { color: #333; margin-bottom: 1em; }</style>
+</head>
+<body>
+<div class="container">
+    <h2>Keep Validation Columns</h2>
+    <div class="desc">This tool keeps only columns matching validation-related patterns. Use this to extract validation columns from a CSV.</div>
+    <input type="file" id="csvFile" accept=".csv" />
+    <button onclick="processCSV()">Process CSV</button>
+    <a id="download" download="filtered.csv" style="display:none; margin-top: 1em;">Download Filtered CSV</a>
+    <div id="status"></div>
+    <a href="tool_index.html">&larr; Back to Tool Index</a>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+<script>
+function processCSV() {
+    const fileInput = document.getElementById('csvFile');
+    const status = document.getElementById('status');
+    const download = document.getElementById('download');
+    if (!fileInput.files.length) {
+        status.textContent = 'Please select a CSV file.';
+        return;
+    }
+    status.textContent = 'Processing...';
+    const originalName = fileInput.files[0].name;
+    const filteredName = originalName.replace(/(\.csv)?$/i, '_validation_columns.csv');
+    Papa.parse(fileInput.files[0], {
+        header: true,
+        skipEmptyLines: true,
+        complete: function(results) {
+            const data = results.data;
+            const header = results.meta && results.meta.fields ? results.meta.fields : Object.keys(data[0] || {});
+            // Keep only columns with 'validation' in the name
+            const keepCols = header.filter(col => /validation/i.test(col));
+            const filtered = data.map(row => {
+                const out = {};
+                keepCols.forEach(col => out[col] = row[col] !== undefined ? row[col] : '');
+                return out;
+            });
+            const csvFiltered = Papa.unparse(filtered, { columns: keepCols });
+            const blobFiltered = new Blob([csvFiltered], { type: 'text/csv' });
+            download.href = URL.createObjectURL(blobFiltered);
+            download.download = filteredName;
+            download.style.display = 'inline';
+            status.innerHTML = `Done!<br>Rows processed: <b>${data.length}</b><br>Columns kept: <b>${keepCols.length}</b><br>Download: <b>${filteredName}</b>`;
+        },
+        error: function(err) {
+            status.textContent = 'Error: ' + err.message;
+        }
+    });
+}
+</script>
+</body>
+</html>

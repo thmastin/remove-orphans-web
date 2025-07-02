@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Remove Orphaned Options from CSV</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 2em; }
+        .container { max-width: 600px; margin: auto; }
+        input[type="file"] { margin-bottom: 1em; }
+        button { margin-top: 1em; }
+        #download, #downloadOrphans { display: none; margin-top: 1em; }
+        .desc { color: #333; margin-bottom: 1em; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h2>Remove Orphaned Options from CSV</h2>
+    <div class="desc">This tool removes orphaned option rows from a CSV file. Upload your CSV, process it, and download both cleaned and orphaned rows. Orphaned options are those that do not have an associated parent or are not linked properly in the data structure. Use this to clean up your product or option data for further processing or import.</div>
+    <input type="file" id="csvFile" accept=".csv" />
+    <button onclick="processCSV()">Process CSV</button>
+    <a id="download" download="cleaned.csv">Download Cleaned CSV</a>
+    <a id="downloadOrphans" download="orphans.csv" style="display:none; margin-top: 1em;">Download Orphans CSV</a>
+    <div id="status"></div>
+    <a href="index.html">&larr; Back to Tool Index</a>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+<script>
+function processCSV() {
+    const fileInput = document.getElementById('csvFile');
+    const status = document.getElementById('status');
+    const download = document.getElementById('download');
+    const downloadOrphans = document.getElementById('downloadOrphans');
+    if (!fileInput.files.length) {
+        status.textContent = 'Please select a CSV file.';
+        return;
+    }
+    status.textContent = 'Processing...';
+    const originalName = fileInput.files[0].name;
+    const cleanedName = originalName.replace(/(\.csv)?$/i, '_no_orphans.csv');
+    const orphansName = originalName.replace(/(\.csv)?$/i, '_orphans.csv');
+    Papa.parse(fileInput.files[0], {
+        header: true,
+        skipEmptyLines: true,
+        complete: function(results) {
+            const originalRows = results.data.length;
+            const { cleaned, orphans } = removeOrphans(results.data);
+            const cleanedRows = cleaned.length;
+            const orphansRows = orphans.length;
+            // Get full header from results.meta.fields
+            const fullHeader = results.meta && results.meta.fields ? results.meta.fields : Object.keys(results.data[0] || {});
+            // Ensure all objects have all header keys
+            function fillMissingFields(arr) {
+                return arr.map(row => {
+                    const filled = {};
+                    fullHeader.forEach(key => { filled[key] = row[key] !== undefined ? row[key] : ''; });
+                    return filled;
+                });
+            }
+            const cleanedFilled = fillMissingFields(cleaned);
+            const orphansFilled = fillMissingFields(orphans);
+            const csvCleaned = Papa.unparse(cleanedFilled, { columns: fullHeader });
+            const csvOrphans = Papa.unparse(orphansFilled, { columns: fullHeader });
+            const blobCleaned = new Blob([csvCleaned], { type: 'text/csv' });
+            const blobOrphans = new Blob([csvOrphans], { type: 'text/csv' });
+            download.href = URL.createObjectURL(blobCleaned);
+            download.download = cleanedName;
+            download.style.display = 'inline';
+            downloadOrphans.href = URL.createObjectURL(blobOrphans);
+            downloadOrphans.download = orphansName;
+            downloadOrphans.style.display = 'inline';
+            status.innerHTML = `Done!<br>Original rows: <b>${originalRows}</b><br>Rows after cleaning: <b>${cleanedRows}</b><br>Rows removed: <b>${orphansRows}</b><br>Download cleaned: <b>${cleanedName}</b><br>Download orphans: <b>${orphansName}</b>`;
+        },
+        error: function(err) {
+            status.textContent = 'Error: ' + err.message;
+        }
+    });
+}
+
+function removeOrphans(data) {
+    let rowsToKeep = [];
+    let orphans = [];
+    let currentGroup = [];
+    let isOrphaned = false;
+    for (let i = 0; i < data.length; i++) {
+        const row = data[i];
+        const isParent = row['type'] === 'opt' &&
+            (row['selection_mode'] === 'single' || row['selection_mode'] === 'multi') &&
+            row['1_name'] && row['1_name'].trim() !== '';
+        if (isParent) {
+            if (currentGroup.length) {
+                if (!isOrphaned) rowsToKeep.push(...currentGroup);
+                else orphans.push(...currentGroup);
+            }
+            currentGroup = [row];
+            isOrphaned = !row['associate_ids'] || row['associate_ids'].trim() === '';
+        } else if (row['type'] === 'opt' && (!row['selection_mode'] || row['selection_mode'].trim() === '') && (!row['1_name'] || row['1_name'].trim() === '')) {
+            if (currentGroup.length) currentGroup.push(row);
+        } else {
+            if (currentGroup.length) {
+                if (!isOrphaned) rowsToKeep.push(...currentGroup);
+                else orphans.push(...currentGroup);
+                currentGroup = [];
+                isOrphaned = false;
+            }
+            rowsToKeep.push(row);
+        }
+    }
+    if (currentGroup.length) {
+        if (!isOrphaned) rowsToKeep.push(...currentGroup);
+        else orphans.push(...currentGroup);
+    }
+    return { cleaned: rowsToKeep, orphans };
+}
+</script>
+</body>
+</html>

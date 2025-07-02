@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Remove Option UUIDs</title>
+    <style>body { font-family: Arial, sans-serif; margin: 2em; } .container { max-width: 600px; margin: auto; } .desc { color: #333; margin-bottom: 1em; }</style>
+</head>
+<body>
+<div class="container">
+    <h2>Remove Option UUIDs</h2>
+    <div class="desc">This tool clears the 'match_id', '1_uuid', and '2_uuid' columns for rows where type is 'opt'. Use this to anonymize or reset option UUIDs in your data.</div>
+    <input type="file" id="csvFile" accept=".csv" />
+    <button onclick="processCSV()">Process CSV</button>
+    <a id="download" download="cleaned.csv" style="display:none; margin-top: 1em;">Download Cleaned CSV</a>
+    <div id="status"></div>
+    <a href="tool_index.html">&larr; Back to Tool Index</a>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+<script>
+function processCSV() {
+    const fileInput = document.getElementById('csvFile');
+    const status = document.getElementById('status');
+    const download = document.getElementById('download');
+    if (!fileInput.files.length) {
+        status.textContent = 'Please select a CSV file.';
+        return;
+    }
+    status.textContent = 'Processing...';
+    const originalName = fileInput.files[0].name;
+    const cleanedName = originalName.replace(/(\.csv)?$/i, '_no_option_uuids.csv');
+    Papa.parse(fileInput.files[0], {
+        header: true,
+        skipEmptyLines: true,
+        complete: function(results) {
+            const data = results.data;
+            const header = results.meta && results.meta.fields ? results.meta.fields : Object.keys(data[0] || {});
+            const cleaned = data.map(row => {
+                if (row['type'] === 'opt') {
+                    return {
+                        ...row,
+                        match_id: '',
+                        '1_uuid': '',
+                        '2_uuid': ''
+                    };
+                }
+                return row;
+            });
+            const csvCleaned = Papa.unparse(cleaned, { columns: header });
+            const blobCleaned = new Blob([csvCleaned], { type: 'text/csv' });
+            download.href = URL.createObjectURL(blobCleaned);
+            download.download = cleanedName;
+            download.style.display = 'inline';
+            status.innerHTML = `Done!<br>Rows processed: <b>${data.length}</b><br>Download: <b>${cleanedName}</b>`;
+        },
+        error: function(err) {
+            status.textContent = 'Error: ' + err.message;
+        }
+    });
+}
+</script>
+</body>
+</html>

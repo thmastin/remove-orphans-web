@@ -3,112 +3,47 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Remove Orphaned Options from CSV</title>
+    <title>CSV Tools Index</title>
     <style>
         body { font-family: Arial, sans-serif; margin: 2em; }
         .container { max-width: 600px; margin: auto; }
-        input[type="file"] { margin-bottom: 1em; }
-        button { margin-top: 1em; }
-        #download, #downloadOrphans { display: none; margin-top: 1em; }
+        h2 { margin-bottom: 1em; }
+        ul { list-style: none; padding: 0; }
+        li { margin-bottom: 1.5em; }
+        a.tool-link { font-size: 1.2em; color: #0074d9; text-decoration: none; }
+        a.tool-link:hover { text-decoration: underline; }
+        .desc { color: #333; margin-top: 0.3em; }
     </style>
 </head>
 <body>
 <div class="container">
-    <h2>Remove Orphaned Options from CSV</h2>
-    <input type="file" id="csvFile" accept=".csv" />
-    <button onclick="processCSV()">Process CSV</button>
-    <a id="download" download="cleaned.csv">Download Cleaned CSV</a>
-    <a id="downloadOrphans" download="orphans.csv" style="display:none; margin-top: 1em;">Download Orphans CSV</a>
-    <div id="status"></div>
+    <h2>CSV Utility Tools</h2>
+    <ul>
+        <li>
+            <a class="tool-link" href="index.html">Remove Orphaned Options from CSV</a>
+            <div class="desc">Removes orphaned option rows from a CSV file. Upload your CSV, process it, and download both cleaned and orphaned rows. (This was the original index tool.)</div>
+        </li>
+        <li>
+            <a class="tool-link" href="tool_keep_name_and_image_and_import.html">Keep Name, Image, and Import Columns</a>
+            <div class="desc">Keeps all columns left of '1_name' and any columns matching patterns like *_name, *_image, or *_import. Useful for extracting key product info from large CSVs.</div>
+        </li>
+        <li>
+            <a class="tool-link" href="tool_lookupnameimage.html">Keep Name and Image Columns</a>
+            <div class="desc">Keeps only columns matching patterns like *_name and *_image. Use this to filter a CSV to just product names and images.</div>
+        </li>
+        <li>
+            <a class="tool-link" href="tool_validations_csv.html">Keep Validation Columns</a>
+            <div class="desc">Keeps only columns matching validation-related patterns. Use this to extract validation columns from a CSV.</div>
+        </li>
+        <li>
+            <a class="tool-link" href="tool_remove_headers.html">Remove Empty Columns</a>
+            <div class="desc">Removes columns that are empty, zero, or blank in all rows. Cleans up CSVs by dropping useless columns.</div>
+        </li>
+        <li>
+            <a class="tool-link" href="tool_remove_option_uuid.html">Remove Option UUIDs</a>
+            <div class="desc">Clears the 'match_id', '1_uuid', and '2_uuid' columns for rows where type is 'opt'. Use this to anonymize or reset option UUIDs in your data.</div>
+        </li>
+    </ul>
 </div>
-<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
-<script>
-function processCSV() {
-    const fileInput = document.getElementById('csvFile');
-    const status = document.getElementById('status');
-    const download = document.getElementById('download');
-    const downloadOrphans = document.getElementById('downloadOrphans');
-    if (!fileInput.files.length) {
-        status.textContent = 'Please select a CSV file.';
-        return;
-    }
-    status.textContent = 'Processing...';
-    const originalName = fileInput.files[0].name;
-    const cleanedName = originalName.replace(/(\.csv)?$/i, '_cleaned.csv');
-    const orphansName = originalName.replace(/(\.csv)?$/i, '_orphans.csv');
-    Papa.parse(fileInput.files[0], {
-        header: true,
-        skipEmptyLines: true,
-        complete: function(results) {
-            const originalRows = results.data.length;
-            const { cleaned, orphans } = removeOrphans(results.data);
-            const cleanedRows = cleaned.length;
-            const orphansRows = orphans.length;
-            // Get full header from results.meta.fields
-            const fullHeader = results.meta && results.meta.fields ? results.meta.fields : Object.keys(results.data[0] || {});
-            // Ensure all objects have all header keys
-            function fillMissingFields(arr) {
-                return arr.map(row => {
-                    const filled = {};
-                    fullHeader.forEach(key => { filled[key] = row[key] !== undefined ? row[key] : ''; });
-                    return filled;
-                });
-            }
-            const cleanedFilled = fillMissingFields(cleaned);
-            const orphansFilled = fillMissingFields(orphans);
-            const csvCleaned = Papa.unparse(cleanedFilled, { columns: fullHeader });
-            const csvOrphans = Papa.unparse(orphansFilled, { columns: fullHeader });
-            const blobCleaned = new Blob([csvCleaned], { type: 'text/csv' });
-            const blobOrphans = new Blob([csvOrphans], { type: 'text/csv' });
-            download.href = URL.createObjectURL(blobCleaned);
-            download.download = cleanedName;
-            download.style.display = 'inline';
-            downloadOrphans.href = URL.createObjectURL(blobOrphans);
-            downloadOrphans.download = orphansName;
-            downloadOrphans.style.display = 'inline';
-            status.innerHTML = `Done!<br>Original rows: <b>${originalRows}</b><br>Rows after cleaning: <b>${cleanedRows}</b><br>Rows removed: <b>${orphansRows}</b><br>Download cleaned: <b>${cleanedName}</b><br>Download orphans: <b>${orphansName}</b>`;
-        },
-        error: function(err) {
-            status.textContent = 'Error: ' + err.message;
-        }
-    });
-}
-
-function removeOrphans(data) {
-    let rowsToKeep = [];
-    let orphans = [];
-    let currentGroup = [];
-    let isOrphaned = false;
-    for (let i = 0; i < data.length; i++) {
-        const row = data[i];
-        const isParent = row['type'] === 'opt' &&
-            (row['selection_mode'] === 'single' || row['selection_mode'] === 'multi') &&
-            row['1_name'] && row['1_name'].trim() !== '';
-        if (isParent) {
-            if (currentGroup.length) {
-                if (!isOrphaned) rowsToKeep.push(...currentGroup);
-                else orphans.push(...currentGroup);
-            }
-            currentGroup = [row];
-            isOrphaned = !row['associate_ids'] || row['associate_ids'].trim() === '';
-        } else if (row['type'] === 'opt' && (!row['selection_mode'] || row['selection_mode'].trim() === '') && (!row['1_name'] || row['1_name'].trim() === '')) {
-            if (currentGroup.length) currentGroup.push(row);
-        } else {
-            if (currentGroup.length) {
-                if (!isOrphaned) rowsToKeep.push(...currentGroup);
-                else orphans.push(...currentGroup);
-                currentGroup = [];
-                isOrphaned = false;
-            }
-            rowsToKeep.push(row);
-        }
-    }
-    if (currentGroup.length) {
-        if (!isOrphaned) rowsToKeep.push(...currentGroup);
-        else orphans.push(...currentGroup);
-    }
-    return { cleaned: rowsToKeep, orphans };
-}
-</script>
 </body>
 </html>

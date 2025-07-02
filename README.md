@@ -13,6 +13,7 @@ This web app provides a suite of CSV utility tools, all running 100% in your bro
   - Keep Validation Columns
   - Remove Empty Columns
   - Remove Option UUIDs
+  - Collapse to Name and Image (VLOOKUP)
 - **Modern UI**: Clean, responsive, and user-friendly interface.
 - **No Backend**: All processing is done client-side for privacy and speed.
 

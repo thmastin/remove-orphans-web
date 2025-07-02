@@ -3,15 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Keep Name and Image Columns</title>
+    <title>Collapse to Name, Image, and SKU (VLOOKUP)</title>
     <style>
         body { font-family: Arial, sans-serif; margin: 2em; background: var(--bg, #fff); color: var(--fg, #222); }
         .container { max-width: 600px; margin: auto; }
         h2 { margin-bottom: 1em; }
-        ul { list-style: none; padding: 0; }
-        li { margin-bottom: 1.5em; }
-        a.tool-link { font-size: 1.2em; color: #0074d9; text-decoration: none; }
-        a.tool-link:hover { text-decoration: underline; }
         .desc { color: var(--desc, #333); margin-top: 0.3em; }
         .dark-toggle { float: right; margin-top: -2.5em; }
         @media (prefers-color-scheme: dark) {
@@ -23,11 +19,11 @@
 <body>
 <div class="container">
     <button class="dark-toggle" onclick="toggleDarkMode()">Toggle Dark Mode</button>
-    <h2>Keep Name and Image Columns</h2>
-    <div class="desc">This tool keeps only two columns: the first *_name column and the first *_image column found in your CSV. Use this to create a simple two-column file for easy VLOOKUP in Excel.</div>
+    <h2>Collapse to Name, Image, and SKU (VLOOKUP)</h2>
+    <div class="desc">This tool collapses all *_name columns into a single Name column, all *_image columns into a single Image column, and keeps all SKU columns (columns containing 'sku', case-insensitive). Empty rows are removed. Perfect for preparing a lookup table for Excel VLOOKUP or similar operations.</div>
     <input type="file" id="csvFile" accept=".csv" />
     <button onclick="processCSV()">Process CSV</button>
-    <a id="download" download="filtered.csv" style="display:none; margin-top: 1em;">Download Filtered CSV</a>
+    <a id="download" download="name_image_sku_vlookup.csv" style="display:none; margin-top: 1em;">Download Name-Image-SKU CSV</a>
     <div id="status"></div>
     <a href="tool_index.html">&larr; Back to Tool Index</a>
 </div>
@@ -50,33 +46,49 @@ function processCSV() {
     }
     status.textContent = 'Processing...';
     const originalName = fileInput.files[0].name;
-    const filteredName = originalName.replace(/(\.csv)?$/i, '_name_image_vlookup.csv');
+    const filteredName = originalName.replace(/(\.csv)?$/i, '_name_image_sku_vlookup.csv');
     Papa.parse(fileInput.files[0], {
         header: true,
         skipEmptyLines: true,
         complete: function(results) {
             const data = results.data;
             const header = results.meta && results.meta.fields ? results.meta.fields : Object.keys(data[0] || {});
-            // Find the first *_name and *_image columns
-            const nameCol = header.find(col => /_name$/i.test(col));
-            const imageCol = header.find(col => /_image$/i.test(col));
-            if (!nameCol || !imageCol) {
-                status.textContent = 'Could not find both a *_name and *_image column.';
+            // Find all *_name, *_image, and sku columns
+            const nameCols = header.filter(col => /_name$/i.test(col));
+            const imageCols = header.filter(col => /_image$/i.test(col));
+            const skuCols = header.filter(col => /sku/i.test(col));
+            if (!nameCols.length && !imageCols.length && !skuCols.length) {
+                status.textContent = 'Could not find any *_name, *_image, or SKU columns.';
                 return;
             }
-            const keepCols = [nameCol, imageCol];
+            // Collapse all *_name and *_image columns, combine all sku columns into one
             const filtered = data.map(row => {
-                return {
-                    [nameCol]: row[nameCol] !== undefined ? row[nameCol] : '',
-                    [imageCol]: row[imageCol] !== undefined ? row[imageCol] : ''
-                };
-            });
-            const csvFiltered = Papa.unparse(filtered, { columns: keepCols });
+                let name = '';
+                let image = '';
+                for (const col of nameCols) {
+                    if (row[col] && row[col].trim() !== '') {
+                        name = row[col];
+                        break;
+                    }
+                }
+                for (const col of imageCols) {
+                    if (row[col] && row[col].trim() !== '') {
+                        image = row[col];
+                        break;
+                    }
+                }
+                // Combine all SKU columns into a single pipe-separated string
+                const skuValues = skuCols.map(col => (row[col] !== undefined && row[col] !== null) ? String(row[col]).trim() : '').filter(val => val !== '');
+                const skuCombined = skuValues.join('|');
+                return { SKU: skuCombined, Name: name, Image: image };
+            }).filter(row => row.SKU || row.Name || row.Image); // Remove empty rows
+            const columns = ["SKU", "Name", "Image"];
+            const csvFiltered = Papa.unparse(filtered, { columns });
             const blobFiltered = new Blob([csvFiltered], { type: 'text/csv' });
             download.href = URL.createObjectURL(blobFiltered);
             download.download = filteredName;
             download.style.display = 'inline';
-            status.innerHTML = `Done!<br>Rows processed: <b>${data.length}</b><br>Columns kept: <b>2</b><br>Download: <b>${filteredName}</b>`;
+            status.innerHTML = `Done!<br>Rows processed: <b>${filtered.length}</b><br>Download: <b>${filteredName}</b>`;
         },
         error: function(err) {
             status.textContent = 'Error: ' + err.message;

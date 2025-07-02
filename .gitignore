@@ -1,1 +1,3 @@
 data/
+# Ignore Visionaire_Windows_final_cleaned.csv if in root (should be in data/)
+/Visionaire_Windows_final_cleaned.csv

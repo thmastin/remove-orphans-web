@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSV Tools Index</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 2em; }
+        .container { max-width: 600px; margin: auto; }
+        h2 { margin-bottom: 1em; }
+        ul { list-style: none; padding: 0; }
+        li { margin-bottom: 1.5em; }
+        a.tool-link { font-size: 1.2em; color: #0074d9; text-decoration: none; }
+        a.tool-link:hover { text-decoration: underline; }
+        .desc { color: #333; margin-top: 0.3em; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h2>CSV Utility Tools</h2>
+    <ul>
+        <li>
+            <a class="tool-link" href="tool_keep_name_and_image_and_import.html">Keep Name, Image, and Import Columns</a>
+            <div class="desc">Keeps all columns left of '1_name' and any columns matching patterns like *_name, *_image, or *_import. Useful for extracting key product info from large CSVs.</div>
+        </li>
+        <li>
+            <a class="tool-link" href="tool_lookupnameimage.html">Keep Name and Image Columns</a>
+            <div class="desc">Keeps only columns matching patterns like *_name and *_image. Use this to filter a CSV to just product names and images.</div>
+        </li>
+        <li>
+            <a class="tool-link" href="tool_validations_csv.html">Keep Validation Columns</a>
+            <div class="desc">Keeps only columns matching validation-related patterns. Use this to extract validation columns from a CSV.</div>
+        </li>
+        <li>
+            <a class="tool-link" href="tool_remove_headers.html">Remove Empty Columns</a>
+            <div class="desc">Removes columns that are empty, zero, or blank in all rows. Cleans up CSVs by dropping useless columns.</div>
+        </li>
+        <li>
+            <a class="tool-link" href="tool_remove_option_uuid.html">Remove Option UUIDs</a>
+            <div class="desc">Clears the 'match_id', '1_uuid', and '2_uuid' columns for rows where type is 'opt'. Use this to anonymize or reset option UUIDs in your data.</div>
+        </li>
+    </ul>
+</div>
+</body>
+</html>

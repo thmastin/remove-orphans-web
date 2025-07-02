@@ -5,18 +5,24 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CSV Tools Index</title>
     <style>
-        body { font-family: Arial, sans-serif; margin: 2em; }
+        body { font-family: Arial, sans-serif; margin: 2em; background: var(--bg, #fff); color: var(--fg, #222); }
         .container { max-width: 600px; margin: auto; }
         h2 { margin-bottom: 1em; }
         ul { list-style: none; padding: 0; }
         li { margin-bottom: 1.5em; }
         a.tool-link { font-size: 1.2em; color: #0074d9; text-decoration: none; }
         a.tool-link:hover { text-decoration: underline; }
-        .desc { color: #333; margin-top: 0.3em; }
+        .desc { color: var(--desc, #333); margin-top: 0.3em; }
+        .dark-toggle { float: right; margin-top: -2.5em; }
+        @media (prefers-color-scheme: dark) {
+            body { --bg: #181a1b; --fg: #eee; --desc: #bbb; }
+        }
+        body.dark-mode { --bg: #181a1b; --fg: #eee; --desc: #bbb; }
     </style>
 </head>
 <body>
 <div class="container">
+    <button class="dark-toggle" onclick="toggleDarkMode()">Toggle Dark Mode</button>
     <h2>CSV Utility Tools</h2>
     <ul>
         <li>
@@ -45,5 +51,14 @@
         </li>
     </ul>
 </div>
+<script>
+function toggleDarkMode() {
+    document.body.classList.toggle('dark-mode');
+    localStorage.setItem('darkMode', document.body.classList.contains('dark-mode'));
+}
+if (localStorage.getItem('darkMode') === 'true') {
+    document.body.classList.add('dark-mode');
+}
+</script>
 </body>
 </html>

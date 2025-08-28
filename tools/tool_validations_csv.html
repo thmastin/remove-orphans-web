@@ -58,7 +58,8 @@ function processCSV() {
             const data = results.data;
             const header = results.meta && results.meta.fields ? results.meta.fields : Object.keys(data[0] || {});
             // Keep only columns with 'validation' in the name
-            const keepCols = header.filter(col => /validation/i.test(col));
+            // Keep only columns matching the regex patterns: ^\d+_name$ or ^\d+_uuid$
+            const keepCols = header.filter(col => /^\d+_name$/.test(col) || /^\d+_uuid$/.test(col));
             const filtered = data.map(row => {
                 const out = {};
                 keepCols.forEach(col => out[col] = row[col] !== undefined ? row[col] : '');
@@ -69,7 +70,7 @@ function processCSV() {
             download.href = URL.createObjectURL(blobFiltered);
             download.download = filteredName;
             download.style.display = 'inline';
-            status.innerHTML = `Done!<br>Rows processed: <b>${data.length}</b><br>Columns kept: <b>${keepCols.length}</b><br>Download: <b>${filteredName}</b>`;
+            status.innerHTML = `Done!<br>Rows processed: <b>${data.length}</b><br>Columns kept: <b>${keepCols.length}</b><br>Download: <b>${filteredName}</b><br>Patterns used: <code>^\\d+_name$</code>, <code>^\\d+_uuid$</code>`;
         },
         error: function(err) {
             status.textContent = 'Error: ' + err.message;

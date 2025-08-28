@@ -74,11 +74,11 @@ function processCSV() {
                     const uuidVal = row[num + '_uuid'] !== undefined ? row[num + '_uuid'] : '';
                     // Only output if at least one is non-empty
                     if (nameVal || uuidVal) {
-                        collapsed.push({ Name: nameVal, UUID: uuidVal });
+                        collapsed.push({ UUID: uuidVal, Name: nameVal });
                     }
                 });
             });
-            const csvCollapsed = Papa.unparse(collapsed, { columns: ['Name', 'UUID'] });
+            const csvCollapsed = Papa.unparse(collapsed, { columns: ['UUID', 'Name'] });
             const blobCollapsed = new Blob([csvCollapsed], { type: 'text/csv' });
             download.href = URL.createObjectURL(blobCollapsed);
             download.download = filteredName;

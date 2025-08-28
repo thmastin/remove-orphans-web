@@ -58,19 +58,33 @@ function processCSV() {
             const data = results.data;
             const header = results.meta && results.meta.fields ? results.meta.fields : Object.keys(data[0] || {});
             // Keep only columns with 'validation' in the name
+            // Trim whitespace from headers and keep a mapping to original
+            const trimmedHeader = header.map(col => col.trim());
             // Keep only columns matching the regex patterns: ^\d+_name$ or ^\d+_uuid$
-            const keepCols = header.filter(col => /^\d+_name$/.test(col) || /^\d+_uuid$/.test(col));
+            const keepCols = trimmedHeader.filter(col => /^\d+_name$/.test(col) || /^\d+_uuid$/.test(col));
+            // Map back to original header names for output
+            const keepColsOriginal = keepCols.map(col => header[trimmedHeader.indexOf(col)]);
+            // Show detected headers for debugging
+            status.innerHTML = `Detected headers: <code>${header.join(', ')}</code><br>`;
+            if (keepCols.length === 0) {
+                status.innerHTML += 'No columns matched the patterns <code>^\\d+_name$</code> or <code>^\\d+_uuid$</code>. Please check your CSV headers.';
+                download.style.display = 'none';
+                return;
+            }
             const filtered = data.map(row => {
                 const out = {};
-                keepCols.forEach(col => out[col] = row[col] !== undefined ? row[col] : '');
+                keepCols.forEach((col, i) => {
+                    const origCol = keepColsOriginal[i];
+                    out[origCol] = row[origCol] !== undefined ? row[origCol] : '';
+                });
                 return out;
             });
-            const csvFiltered = Papa.unparse(filtered, { columns: keepCols });
+            const csvFiltered = Papa.unparse(filtered, { columns: keepColsOriginal });
             const blobFiltered = new Blob([csvFiltered], { type: 'text/csv' });
             download.href = URL.createObjectURL(blobFiltered);
             download.download = filteredName;
             download.style.display = 'inline';
-            status.innerHTML = `Done!<br>Rows processed: <b>${data.length}</b><br>Columns kept: <b>${keepCols.length}</b><br>Download: <b>${filteredName}</b><br>Patterns used: <code>^\\d+_name$</code>, <code>^\\d+_uuid$</code>`;
+            status.innerHTML += `Done!<br>Rows processed: <b>${data.length}</b><br>Columns kept: <b>${keepCols.length}</b><br>Download: <b>${filteredName}</b><br>Patterns used: <code>^\\d+_name$</code>, <code>^\\d+_uuid$</code>`;
         },
         error: function(err) {
             status.textContent = 'Error: ' + err.message;

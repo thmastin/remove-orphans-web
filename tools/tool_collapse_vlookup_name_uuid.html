@@ -3,15 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Keep Validation Columns</title>
+    <title>Collapse for VLOOKUP (Name & UUID Only)</title>
     <style>
         body { font-family: Arial, sans-serif; margin: 2em; background: var(--bg, #fff); color: var(--fg, #222); }
         .container { max-width: 600px; margin: auto; }
         h2 { margin-bottom: 1em; }
-        ul { list-style: none; padding: 0; }
-        li { margin-bottom: 1.5em; }
-        a.tool-link { font-size: 1.2em; color: #0074d9; text-decoration: none; }
-        a.tool-link:hover { text-decoration: underline; }
         .desc { color: var(--desc, #333); margin-top: 0.3em; }
         .dark-toggle { float: right; margin-top: -2.5em; }
         @media (prefers-color-scheme: dark) {
@@ -23,11 +19,11 @@
 <body>
 <div class="container">
     <button class="dark-toggle" onclick="toggleDarkMode()">Toggle Dark Mode</button>
-    <h2>Keep Validation Columns</h2>
-    <div class="desc">This tool keeps only columns matching validation-related patterns. Use this to extract validation columns from a CSV.</div>
+    <h2>Collapse for VLOOKUP (Name & UUID Only)</h2>
+    <div class="desc">Upload a CSV to collapse option columns for VLOOKUP, keeping only columns matching <code>^\d+_name$</code> and <code>^\d+_uuid$</code>.</div>
     <input type="file" id="csvFile" accept=".csv" />
     <button onclick="processCSV()">Process CSV</button>
-    <a id="download" download="filtered.csv" style="display:none; margin-top: 1em;">Download Filtered CSV</a>
+    <a id="download" download="collapsed_vlookup_name_uuid.csv" style="display:none; margin-top: 1em;">Download Collapsed CSV</a>
     <div id="status"></div>
     <a href="tool_index.html">&larr; Back to Tool Index</a>
 </div>
@@ -50,39 +46,44 @@ function processCSV() {
     }
     status.textContent = 'Processing...';
     const originalName = fileInput.files[0].name;
-    const filteredName = originalName.replace(/(\.csv)?$/i, '_validation_columns.csv');
+    const filteredName = originalName.replace(/(\.csv)?$/i, '_collapsed_vlookup_name_uuid.csv');
     Papa.parse(fileInput.files[0], {
         header: true,
         skipEmptyLines: true,
         complete: function(results) {
             const data = results.data;
             const header = results.meta && results.meta.fields ? results.meta.fields : Object.keys(data[0] || {});
-            // Keep only columns with 'validation' in the name
-            // Trim whitespace from headers and keep a mapping to original
+            // Find all *_name and *_uuid columns and pair them by group number
             const trimmedHeader = header.map(col => col.trim());
-            // Keep only columns matching the regex patterns: ^\d+_name$ or ^\d+_uuid$
-            const keepCols = trimmedHeader.filter(col => /^\d+_name$/.test(col) || /^\d+_uuid$/.test(col));
-            // Map back to original header names for output
-            const keepColsOriginal = keepCols.map(col => header[trimmedHeader.indexOf(col)]);
-            if (keepCols.length === 0) {
-                status.innerHTML = 'No columns matched the patterns <code>^\\d+_name$</code> or <code>^\\d+_uuid$</code>. Please check your CSV headers.';
+            const nameCols = trimmedHeader.filter(col => /^\d+_name$/.test(col));
+            const uuidCols = trimmedHeader.filter(col => /^\d+_uuid$/.test(col));
+            if (nameCols.length === 0 || uuidCols.length === 0) {
+                status.innerHTML = 'No columns matched the patterns <code>^\\d+_name$</code> and <code>^\\d+_uuid$</code>. Please check your CSV headers.';
                 download.style.display = 'none';
                 return;
             }
-            const filtered = data.map(row => {
-                const out = {};
-                keepCols.forEach((col, i) => {
-                    const origCol = keepColsOriginal[i];
-                    out[origCol] = row[origCol] !== undefined ? row[origCol] : '';
+            // Pair by group number (e.g., 1_name with 1_uuid)
+            const groupNums = nameCols.map(col => col.match(/^(\d+)_name$/)[1]).filter(num => uuidCols.includes(num + '_uuid'));
+            // Use only group numbers that have both name and uuid
+            const validGroups = nameCols.map(col => col.match(/^(\d+)_name$/)[1]).filter(num => uuidCols.includes(num + '_uuid'));
+            // For each row, output Name and UUID for each valid group
+            let collapsed = [];
+            data.forEach(row => {
+                validGroups.forEach(num => {
+                    const nameVal = row[num + '_name'] !== undefined ? row[num + '_name'] : '';
+                    const uuidVal = row[num + '_uuid'] !== undefined ? row[num + '_uuid'] : '';
+                    // Only output if at least one is non-empty
+                    if (nameVal || uuidVal) {
+                        collapsed.push({ Name: nameVal, UUID: uuidVal });
+                    }
                 });
-                return out;
             });
-            const csvFiltered = Papa.unparse(filtered, { columns: keepColsOriginal });
-            const blobFiltered = new Blob([csvFiltered], { type: 'text/csv' });
-            download.href = URL.createObjectURL(blobFiltered);
+            const csvCollapsed = Papa.unparse(collapsed, { columns: ['Name', 'UUID'] });
+            const blobCollapsed = new Blob([csvCollapsed], { type: 'text/csv' });
+            download.href = URL.createObjectURL(blobCollapsed);
             download.download = filteredName;
             download.style.display = 'inline';
-            status.innerHTML += `Done!<br>Rows processed: <b>${data.length}</b><br>Columns kept: <b>${keepCols.length}</b><br>Download: <b>${filteredName}</b><br>Patterns used: <code>^\\d+_name$</code>, <code>^\\d+_uuid$</code>`;
+            status.innerHTML = `Done!<br>Rows processed: <b>${data.length}</b><br>Groups found: <b>${validGroups.length}</b><br>Collapsed rows: <b>${collapsed.length}</b><br>Download: <b>${filteredName}</b>`;
         },
         error: function(err) {
             status.textContent = 'Error: ' + err.message;

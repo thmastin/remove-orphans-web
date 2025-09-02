@@ -58,6 +58,8 @@ function processCSV() {
         status.textContent = 'Please select a CSV file.';
         return;
     }
+    gtag("event", "tool_remove_option_uuid", { "app_name": "Remove Option UUIDs", "file_name": fileInput.files[0].name});
+
     status.textContent = 'Processing...';
     const originalName = fileInput.files[0].name;
     const cleanedName = originalName.replace(/(\.csv)?$/i, '_no_option_uuids.csv');

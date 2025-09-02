@@ -58,6 +58,8 @@ function processCSV() {
         status.textContent = 'Please select a CSV file.';
         return;
     }
+    gtag("event", "tool_keep_name_and_image_and_import", { "app_name": "Keep Name, Image, and Import Columns", "file_name": fileInput.files[0].name});
+
     status.textContent = 'Processing...';
     const originalName = fileInput.files[0].name;
     const filteredName = originalName.replace(/(\.csv)?$/i, '_keep_name_image_import.csv');

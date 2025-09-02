@@ -54,6 +54,8 @@ function processCSV() {
         status.textContent = 'Please select a CSV file.';
         return;
     }
+    gtag("event", "tool_collapse_vlookup_name_uuid", { "app_name": "Collapse to Name and UUID (VLOOKUP)", "file_name": fileInput.files[0].name});
+
     status.textContent = 'Processing...';
     const originalName = fileInput.files[0].name;
     const filteredName = originalName.replace(/(\.csv)?$/i, '_collapsed_vlookup_name_uuid.csv');

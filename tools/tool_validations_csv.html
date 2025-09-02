@@ -58,6 +58,8 @@ function processCSV() {
         status.textContent = 'Please select a CSV file.';
         return;
     }
+    gtag("event", "tool_validations_csv", { "app_name": "Keep Validation Columns", "file_name": fileInput.files[0].name});
+
     status.textContent = 'Processing...';
     const originalName = fileInput.files[0].name;
     const filteredName = originalName.replace(/(\.csv)?$/i, '_validation_columns.csv');

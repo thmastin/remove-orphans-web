@@ -19,6 +19,16 @@
         }
         body.dark-mode { --bg: #181a1b; --fg: #eee; --desc: #bbb; }
     </style>
+
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-2VG9GYTH4N"></script>
+    <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'G-2VG9GYTH4N');
+    </script>
 </head>
 <body>
 <div class="container">
@@ -48,6 +58,8 @@ function processCSV() {
         status.textContent = 'Please select a CSV file.';
         return;
     }
+    gtag("event", "tool_remove_option_uuid", { "app_name": "Remove Option UUIDs", "file_name": fileInput.files[0].name});
+
     status.textContent = 'Processing...';
     const originalName = fileInput.files[0].name;
     const cleanedName = originalName.replace(/(\.csv)?$/i, '_no_option_uuids.csv');

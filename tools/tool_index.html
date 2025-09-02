@@ -14,10 +14,38 @@
         a.tool-link:hover { text-decoration: underline; }
         .desc { color: #333; margin-top: 0.3em; }
     </style>
+
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-2VG9GYTH4N"></script>
+    <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'G-2VG9GYTH4N');
+    </script>
 </head>
 <body>
 <div class="container">
     <h2>CSV Utility Tools</h2>
+
+    <h3>Data Cleanup</h3>
+    <ul>
+        <li>
+            <a class="tool-link" href="tool_remove_headers.html">Remove Empty Columns</a>
+            <div class="desc">Removes columns that are empty, zero, or blank in all rows. Cleans up CSVs by dropping useless columns.</div>
+        </li>
+        <li>
+            <a class="tool-link" href="tool_remove_option_uuid.html">Remove Option UUIDs</a>
+            <div class="desc">Clears the 'match_id', '1_uuid', and '2_uuid' columns for rows where type is 'opt'. Use this to anonymize or reset option UUIDs in your data.</div>
+        </li>
+        <li>
+            <a class="tool-link" href="tool_remove_orphans.html">Remove Orphaned Options from CSV</a>
+            <div class="desc">Removes orphaned option rows from a CSV file. Upload your CSV, process it, and download both cleaned and orphaned rows.</div>
+        </li>
+    </ul>
+
+    <h3>Others</h3>
     <ul>
         <li>
             <a class="tool-link" href="tool_keep_name_and_image_and_import.html">Keep Name, Image, and Import Columns</a>
@@ -30,18 +58,6 @@
         <li>
             <a class="tool-link" href="tool_validations_csv.html">Keep Validation Columns</a>
             <div class="desc">Keeps only columns matching validation-related patterns. Use this to extract validation columns from a CSV.</div>
-        </li>
-        <li>
-            <a class="tool-link" href="tool_remove_headers.html">Remove Empty Columns</a>
-            <div class="desc">Removes columns that are empty, zero, or blank in all rows. Cleans up CSVs by dropping useless columns.</div>
-        </li>
-        <li>
-            <a class="tool-link" href="tool_remove_option_uuid.html">Remove Option UUIDs</a>
-            <div class="desc">Clears the 'match_id', '1_uuid', and '2_uuid' columns for rows where type is 'opt'. Use this to anonymize or reset option UUIDs in your data.</div>
-        </li>
-        <li>
-            <a class="tool-link" href="tool_remove_orphans.html">Remove Orphaned Options from CSV</a>
-            <div class="desc">Removes orphaned option rows from a CSV file. Upload your CSV, process it, and download both cleaned and orphaned rows.</div>
         </li>
         <li>
             <a class="tool-link" href="tools/tool_collapse_name_image_vlookup.html">Collapse to Name and Image (VLOOKUP)</a>

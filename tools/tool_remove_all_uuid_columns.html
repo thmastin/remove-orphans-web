@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Remove All UUID Columns</title>
+    <!-- Google Tag Manager -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-XXXXXXXXXX');
+    </script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 2em; background: var(--bg, #fff); color: var(--fg, #222); }
+        .container { max-width: 600px; margin: auto; }
+        input[type="file"] { margin-bottom: 1em; }
+        button { margin-top: 1em; }
+        #download { display: none; margin-top: 1em; }
+        .dark-toggle { float: right; margin-top: -2.5em; }
+        @media (prefers-color-scheme: dark) {
+            body { --bg: #181a1b; --fg: #eee; }
+        }
+        body.dark-mode { --bg: #181a1b; --fg: #eee; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <button class="dark-toggle" onclick="toggleDarkMode()">Toggle Dark Mode</button>
+    <h2>Remove All UUID Columns</h2>
+    <div style="margin-bottom:2em;">
+        <input type="file" id="csvFile" accept=".csv" />
+        <button onclick="processCSV()">Process CSV</button>
+        <a id="download" download="no_uuid_columns.csv">Download CSV Without UUID Columns</a>
+        <div id="status"></div>
+    </div>
+    <div class="desc">This tool removes all columns whose header ends with 'uuid' (case-insensitive) and their content from your CSV file.</div>
+    <a href="../index.html">&larr; Back to Tool Index</a>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+<script>
+function toggleDarkMode() {
+    document.body.classList.toggle('dark-mode');
+    localStorage.setItem('darkMode', document.body.classList.contains('dark-mode'));
+}
+if (localStorage.getItem('darkMode') === 'true') {
+    document.body.classList.add('dark-mode');
+}
+</script>
+<script>
+function processCSV() {
+    const fileInput = document.getElementById('csvFile');
+    const status = document.getElementById('status');
+    const download = document.getElementById('download');
+    if (!fileInput.files.length) {
+        status.textContent = 'Please select a CSV file.';
+        return;
+    }
+    status.textContent = 'Processing...';
+    const originalName = fileInput.files[0].name;
+    const outputName = originalName.replace(/(\.csv)?$/i, '_no_uuid_columns.csv');
+    Papa.parse(fileInput.files[0], {
+        header: true,
+        skipEmptyLines: true,
+        complete: function(results) {
+            const headers = results.meta.fields;
+            // Remove columns ending with 'uuid' (case-insensitive)
+            const keepHeaders = headers.filter(h => !/uuid$/i.test(h));
+            const cleanedRows = results.data.map(row => {
+                const newRow = {};
+                keepHeaders.forEach(h => newRow[h] = row[h]);
+                return newRow;
+            });
+            const csvCleaned = Papa.unparse(cleanedRows, { columns: keepHeaders });
+            const blobCleaned = new Blob([csvCleaned], { type: 'text/csv' });
+            download.href = URL.createObjectURL(blobCleaned);
+            download.download = outputName;
+            download.style.display = 'inline';
+            status.innerHTML = `Done!<br>Columns removed: <b>${headers.length - keepHeaders.length}</b><br>Download: <b>${outputName}</b>`;
+        },
+        error: function(err) {
+            status.textContent = 'Error: ' + err.message;
+        }
+    });
+}
+</script>
+</body>
+</html>

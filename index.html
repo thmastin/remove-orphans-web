@@ -49,6 +49,10 @@ if (localStorage.getItem('darkMode') === 'true') {
     <h3>Data Cleanup</h3>
     <ul>
         <li>
+            <a class="tool-link" href="tools/tool_remove_all_uuid_columns.html">Remove All UUID Columns</a>
+            <div class="desc">Removes all columns whose header ends with 'uuid' (case-insensitive) and their content from your CSV file.</div>
+        </li>
+        <li>
             <a class="tool-link" href="tools/tool_remove_headers.html">Remove Empty Columns</a>
             <div class="desc">Removes columns that are empty, zero, or blank in all rows. Cleans up CSVs by dropping useless columns.</div>
         </li>

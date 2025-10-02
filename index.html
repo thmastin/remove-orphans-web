@@ -49,6 +49,10 @@ if (localStorage.getItem('darkMode') === 'true') {
     <h3>Data Cleanup</h3>
     <ul>
         <li>
+            <a class="tool-link" href="tools/tool_reorder_estimate_templates.html">Reorder Estimate Templates</a>
+            <div class="desc">Reorders estimate template CSVs so each template (grouped by rows starting with a non-empty folder_name) is sorted alphabetically by the folder_name value.</div>
+        </li>
+        <li>
             <a class="tool-link" href="tools/tool_remove_all_uuid_columns.html">Remove All UUID Columns</a>
             <div class="desc">Removes all columns whose header ends with 'uuid' (case-insensitive) and their content from your CSV file.</div>
         </li>

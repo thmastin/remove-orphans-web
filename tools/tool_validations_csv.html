@@ -69,22 +69,29 @@ function processCSV() {
         complete: function(results) {
             const data = results.data;
             const header = results.meta && results.meta.fields ? results.meta.fields : Object.keys(data[0] || {});
-            // Keep only columns with 'validation' in the name
             // Trim whitespace from headers and keep a mapping to original
             const trimmedHeader = header.map(col => col.trim());
             // Keep only columns matching the regex patterns: ^\d+_name$ or ^\d+_uuid$
             const keepCols = trimmedHeader.filter(col => /^\d+_name$/.test(col) || /^\d+_uuid$/.test(col));
             // Map back to original header names for output
-            const keepColsOriginal = keepCols.map(col => header[trimmedHeader.indexOf(col)]);
-            if (keepCols.length === 0) {
+            let keepColsOriginal = keepCols.map(col => header[trimmedHeader.indexOf(col)]);
+            // Ensure the 'type' column is retained if present
+            const typeIndex = trimmedHeader.findIndex(c => c.toLowerCase() === 'type');
+            if (typeIndex !== -1) {
+                const typeOrig = header[typeIndex];
+                if (!keepColsOriginal.includes(typeOrig)) {
+                    // Put 'type' at the front for clarity
+                    keepColsOriginal.unshift(typeOrig);
+                }
+            }
+            if (keepColsOriginal.length === 0) {
                 status.innerHTML = 'No columns matched the patterns <code>^\\d+_name$</code> or <code>^\\d+_uuid$</code>. Please check your CSV headers.';
                 download.style.display = 'none';
                 return;
             }
             const filtered = data.map(row => {
                 const out = {};
-                keepCols.forEach((col, i) => {
-                    const origCol = keepColsOriginal[i];
+                keepColsOriginal.forEach(origCol => {
                     out[origCol] = row[origCol] !== undefined ? row[origCol] : '';
                 });
                 return out;
